@@ -38,8 +38,8 @@ npm run start:dev
 - User-token relation: one-to-one (`User.refreshToken`), so each user keeps one active refresh token record at a time
 - JWT layer: `AuthModule` registers `JwtModule` asynchronously with `jwt.accessSecret` and `jwt.accessExpiresIn`
 - Strategy: `src/auth/jwt.ts` reads Bearer tokens, verifies access tokens, and loads the user from Prisma
-- Passwords: `bcrypt.hash(..., 10)` on register, `bcrypt.compare(...)` on login and refresh/logout validation
-- Tokens: access and refresh tokens are signed from the same payload; refresh/logout validate by `userId` then `bcrypt.compare` against stored hash; old refresh token rows are deleted before saving a new hashed refresh token
+- Passwords: `bcrypt.hash(..., 10)` on register, `bcrypt.compare(...)` on login
+- Tokens: access and refresh tokens are signed from the same payload; refresh/logout hash the token with Node `crypto` SHA-256, compare it in constant time, and then delete/save the stored refresh record; old refresh token rows are deleted before saving a new hashed refresh token
 - Guards: `JwtAuthGuard` protects auth routes, `RolesGuard` checks `@Roles(...)` metadata
 - Decorators: `@CurrentUser()` reads `request.user`, `@Roles(...)` marks role-restricted routes
 - DTO validation: `nestjs-zod` DTOs define request schemas for login, register, refresh, and logout
