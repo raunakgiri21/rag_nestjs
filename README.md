@@ -45,6 +45,12 @@ npm run start:dev
 - DTO validation: `nestjs-zod` DTOs define request schemas for login, register, refresh, and logout
 - Error/response handling: global `ResponseInterceptor` wraps success responses, and `HttpExceptionFilter` standardizes failures
 
+## Redis Rate Limiter
+
+- Redis stores a counter for each IP and route handled by `RateLimitGuard`.
+- Each counter gets a TTL, so the limit resets automatically after the configured window.
+- When the counter goes over the limit, the API returns `429 Too Many Requests`.
+
 ## Scripts
 
 ```bash
@@ -56,4 +62,4 @@ npm run test:e2e
 
 ## Env
 
-Required env keys: `PORT`, `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRES_IN`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`.
+Required env keys: `PORT`, `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRES_IN`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `REDIS_HOST`, `REDIS_PORT`.
