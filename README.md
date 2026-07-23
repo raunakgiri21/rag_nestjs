@@ -51,6 +51,21 @@ npm run start:dev
 - Each counter gets a TTL, so the limit resets automatically after the configured window.
 - When the counter goes over the limit, the API returns `429 Too Many Requests`.
 
+## Phase 2 RAG Setup
+
+Phase 2 adds the retrieval-augmented generation pipeline around the auth foundation.
+
+- `POST /api/kb/upload` accepts a file upload, validates that a file exists, and forwards it to the ingestion pipeline.
+- The ingestion flow lives under [`src/kb`](src/kb):
+  - [`src/kb/kb.controller.ts`](src/kb/kb.controller.ts) exposes the upload endpoint.
+  - [`src/kb/services/ingestion/ingestion.service.ts`](src/kb/services/ingestion/ingestion.service.ts) chooses the right loader based on MIME type, validates the input, splits the content into chunks, embeds those chunks, and writes them to the vector store.
+  - [`src/kb/loaders/pdf-loader.service.ts`](src/kb/loaders/pdf-loader.service.ts) loads PDF files into LangChain documents.
+  - [`src/kb/loaders/text-loader.service.ts`](src/kb/loaders/text-loader.service.ts) loads plain text files into a single document.
+  - [`src/kb/splitters/text-splitter.service.ts`](src/kb/splitters/text-splitter.service.ts) uses a recursive character splitter with chunk size `1000` and overlap `200`.
+  - [`src/kb/embeddings/embeddings.service.ts`](src/kb/embeddings/embeddings.service.ts) sends the chunk text to the Gemini embedding model and returns embeddings for each chunk.
+  - [`src/kb/vector-store/vector-store.service.ts`](src/kb/vector-store/vector-store.service.ts) connects to Qdrant, ensures the expected collection exists, and upserts vector payloads containing the chunk text and metadata.
+- The current retrieval service is scaffolded in [`src/kb/services/retriever/retriever.service.ts`](src/kb/services/retriever/retriever.service.ts) and is ready for the next step: querying stored vectors and returning relevant context.
+
 ## Scripts
 
 ```bash
@@ -62,4 +77,9 @@ npm run test:e2e
 
 ## Env
 
-Required env keys: `PORT`, `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRES_IN`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `REDIS_HOST`, `REDIS_PORT`.
+Required env keys:
+
+- Core: `PORT`, `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRES_IN`
+- Postgres: `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
+- Redis: `REDIS_HOST`, `REDIS_PORT`
+- AI / RAG: `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_EMBEDDING_MODEL`, `QDRANT_URL`, `QDRANT_COLLECTION`
