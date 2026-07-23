@@ -14,6 +14,11 @@ export class EmbeddingsService {
     });
   }
 
+  // Embed a single search query.
+  async embedQuery(text: string): Promise<number[]> {
+    return this.embeddingModel.embedQuery(text);
+  }
+
   async embedDocuments(texts: string[]): Promise<number[][]> {
     return this.embeddingModel.embedDocuments(texts);
   }

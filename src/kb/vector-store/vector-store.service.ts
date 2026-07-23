@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { QdrantClient } from '@qdrant/js-client-rest';
 import { v4 as uuid } from 'uuid';
 import { Document } from '@langchain/core/documents';
+import { RetrievedDocument } from '../types/retrieved-document.type';
 
 @Injectable()
 export class VectorStoreService implements OnModuleInit {
@@ -106,7 +107,7 @@ export class VectorStoreService implements OnModuleInit {
     }
   }
 
-  async search(embedding: number[], limit = 5): Promise<Document[]> {
+  async search(embedding: number[], limit = 5): Promise<RetrievedDocument[]> {
     try {
       const results = await this.client.search(
         this.config.getOrThrow<string>('qdrant.collection'),
@@ -116,13 +117,21 @@ export class VectorStoreService implements OnModuleInit {
         },
       );
 
-      return results.map(
-        (point) =>
-          new Document({
-            pageContent: point.payload?.text as string,
-            metadata: point.payload as Record<string, any>,
-          }),
-      );
+      return results.map((point): RetrievedDocument => {
+        const payload = point.payload as {
+          text: string;
+          source: string;
+          page: number;
+        };
+
+        return {
+          content: payload.text,
+          source: payload.source,
+          page: payload.page,
+          score: point.score,
+          chunkId: point.id as string,
+        };
+      });
     } catch (error) {
       this.handleError('Failed to search vectors in Qdrant.', error);
     }

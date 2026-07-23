@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Post,
   UploadedFile,
@@ -9,10 +10,15 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 
 import { IngestionService } from './services/ingestion/ingestion.service';
+import { RetrieverService } from './services/retriever/retriever.service';
+import { RetrieveDto } from './kb.dto';
 
 @Controller('kb')
 export class KbController {
-  constructor(private readonly ingestionService: IngestionService) {}
+  constructor(
+    private readonly ingestionService: IngestionService,
+    private readonly retrieverService: RetrieverService,
+  ) {}
 
   @Post('upload')
   @UseInterceptors(
@@ -36,5 +42,10 @@ export class KbController {
       mimeType: file.mimetype,
       originalName: file.originalname,
     });
+  }
+
+  @Post('retrieve')
+  retrieve(@Body() dto: RetrieveDto) {
+    return this.retrieverService.retrieve(dto.query, dto.limit);
   }
 }
