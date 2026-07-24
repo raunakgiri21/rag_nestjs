@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable prettier/prettier */
 import {
   ArgumentsHost,
   Catch,
@@ -11,13 +10,8 @@ import {
 } from '@nestjs/common';
 
 @Catch()
-export class HttpExceptionFilter
-  implements ExceptionFilter
-{
-  catch(
-    exception: unknown,
-    host: ArgumentsHost,
-  ) {
+export class HttpExceptionFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const res = ctx.getResponse();
 
@@ -30,18 +24,16 @@ export class HttpExceptionFilter
     let errors: any = null;
 
     if (exception instanceof HttpException) {
-      const response =
-        exception.getResponse();
+      const response = exception.getResponse();
 
       if (typeof response === 'string') {
         message = response;
       } else {
         const body = response as any;
 
-        message =
-          Array.isArray(body.message)
-            ? body.message.join(', ')
-            : body.message;
+        message = Array.isArray(body.message)
+          ? body.message.join(', ')
+          : body.message;
 
         errors = body.errors ?? null;
       }

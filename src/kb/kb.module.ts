@@ -7,6 +7,7 @@ import { KbController } from './kb.controller';
 import { PdfLoaderService } from './loaders/pdf-loader.service';
 import { PlainTextLoaderService } from './loaders/text-loader.service';
 import { TextSplitterService } from './splitters/text-splitter.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Module({
   providers: [
@@ -17,6 +18,7 @@ import { TextSplitterService } from './splitters/text-splitter.service';
     PdfLoaderService,
     PlainTextLoaderService,
     TextSplitterService,
+    PrismaService,
   ],
   controllers: [KbController],
 })

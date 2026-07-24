@@ -35,6 +35,22 @@ model RefreshToken {
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model Document {
+  id        String @id @default(uuid())
+  userId    String
+  fileName  String
+
+  status    DocumentStatus
+
+  createdAt DateTime @default(now())
+}
+
+enum DocumentStatus {
+  PENDING
+  READY
+  FAILED
+}
+
 enum Role {
   USER
   ADMIN
