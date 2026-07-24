@@ -55,16 +55,42 @@ npm run start:dev
 
 Phase 2 adds the retrieval-augmented generation pipeline around the auth foundation.
 
-- `POST /api/kb/upload` accepts a file upload, validates that a file exists, and forwards it to the ingestion pipeline.
-- The ingestion flow lives under [`src/kb`](src/kb):
-  - [`src/kb/kb.controller.ts`](src/kb/kb.controller.ts) exposes the upload endpoint.
-  - [`src/kb/services/ingestion/ingestion.service.ts`](src/kb/services/ingestion/ingestion.service.ts) chooses the right loader based on MIME type, validates the input, splits the content into chunks, embeds those chunks, and writes them to the vector store.
-  - [`src/kb/loaders/pdf-loader.service.ts`](src/kb/loaders/pdf-loader.service.ts) loads PDF files into LangChain documents.
-  - [`src/kb/loaders/text-loader.service.ts`](src/kb/loaders/text-loader.service.ts) loads plain text files into a single document.
-  - [`src/kb/splitters/text-splitter.service.ts`](src/kb/splitters/text-splitter.service.ts) uses a recursive character splitter with chunk size `1000` and overlap `200`.
-  - [`src/kb/embeddings/embeddings.service.ts`](src/kb/embeddings/embeddings.service.ts) sends the chunk text to the Gemini embedding model and returns embeddings for each chunk.
-  - [`src/kb/vector-store/vector-store.service.ts`](src/kb/vector-store/vector-store.service.ts) connects to Qdrant, ensures the expected collection exists, and upserts vector payloads containing the chunk text and metadata.
-- The current retrieval service is scaffolded in [`src/kb/services/retriever/retriever.service.ts`](src/kb/services/retriever/retriever.service.ts) and is ready for the next step: querying stored vectors and returning relevant context.
+- `POST /api/kb/upload` accepts a file upload, validates that a file exists, and sends it into the ingestion pipeline.
+- `POST /api/chat/ask` accepts a question and forwards it to the agent flow.
+
+### Flow
+
+1. `ChatController` receives the question through [`src/chat/chat.controller.ts`](src/chat/chat.controller.ts).
+2. `ChatService` forwards the request to [`src/agent/agent.service.ts`](src/agent/agent.service.ts).
+3. `AgentService` asks [`src/kb/kb.service.ts`](src/kb/kb.service.ts) for the most relevant chunks.
+4. `KbService` now owns both ingestion and retrieval by composing [`src/kb/services/ingestion/ingestion.service.ts`](src/kb/services/ingestion/ingestion.service.ts) and [`src/kb/services/retriever/retriever.service.ts`](src/kb/services/retriever/retriever.service.ts).
+5. `RetrieverService` embeds the query and searches Qdrant through [`src/kb/vector-store/vector-store.service.ts`](src/kb/vector-store/vector-store.service.ts).
+6. `AgentService` builds a RAG prompt from the retrieved chunks, sends it to the configured LLM, and returns a structured answer with source metadata.
+
+### KB Ingestion
+
+- [`src/kb/kb.controller.ts`](src/kb/kb.controller.ts) exposes the upload endpoint and rejects empty uploads.
+- [`src/kb/services/ingestion/ingestion.service.ts`](src/kb/services/ingestion/ingestion.service.ts) chooses the loader based on MIME type, validates the input, splits the content into chunks, embeds those chunks, and writes them to the vector store.
+- [`src/kb/loaders/pdf-loader.service.ts`](src/kb/loaders/pdf-loader.service.ts) loads PDF files into LangChain documents.
+- [`src/kb/loaders/text-loader.service.ts`](src/kb/loaders/text-loader.service.ts) loads plain text files into a single document.
+- [`src/kb/splitters/text-splitter.service.ts`](src/kb/splitters/text-splitter.service.ts) uses a recursive character splitter with chunk size `1000` and overlap `200`.
+- [`src/kb/embeddings/embeddings.service.ts`](src/kb/embeddings/embeddings.service.ts) sends chunk text to the configured embedding model and returns embeddings for each chunk.
+- [`src/kb/vector-store/vector-store.service.ts`](src/kb/vector-store/vector-store.service.ts) connects to Qdrant, ensures the expected collection exists, and upserts vector payloads containing the chunk text and metadata.
+
+### Retrieval And Answering
+
+- [`src/kb/services/retriever/retriever.service.ts`](src/kb/services/retriever/retriever.service.ts) embeds the user query and retrieves the top matching chunks.
+- [`src/agent/prompts/rag.prompt.ts`](src/agent/prompts/rag.prompt.ts) constrains the model to answer only from the provided context.
+- [`src/agent/schemas/answer.schema.ts`](src/agent/schemas/answer.schema.ts) defines the structured response shape.
+- [`src/agent/llm/llm.service.ts`](src/agent/llm/llm.service.ts) supports the configured provider and currently switches between Gemini and Groq.
+- [`src/agent/agent.service.ts`](src/agent/agent.service.ts) assembles the retrieved context, invokes the model, and appends source references to the final answer.
+
+### Module Wiring
+
+- [`src/kb/kb.module.ts`](src/kb/kb.module.ts) provides the ingestion, retrieval, embedding, and vector-store services, then exports `KbService`.
+- [`src/agent/agent.module.ts`](src/agent/agent.module.ts) imports `KbModule` and exports `AgentService`.
+- [`src/chat/chat.module.ts`](src/chat/chat.module.ts) imports `AgentModule` and exposes the chat controller.
+- [`src/app.module.ts`](src/app.module.ts) registers `KbModule` and `ChatModule` at the application level.
 
 ## Scripts
 
@@ -82,4 +108,4 @@ Required env keys:
 - Core: `PORT`, `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRES_IN`
 - Postgres: `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
 - Redis: `REDIS_HOST`, `REDIS_PORT`
-- AI / RAG: `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_EMBEDDING_MODEL`, `QDRANT_URL`, `QDRANT_COLLECTION`
+- AI / RAG: `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_EMBEDDING_MODEL`, `GROQ_API_KEY`, `GROQ_MODEL`, `QDRANT_URL`, `QDRANT_COLLECTION`

@@ -8,16 +8,12 @@ import { Roles } from 'src/common/decorators/role.decorator';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtPayloadType } from './types/jwt-payload.types';
-import { RedisService } from 'src/redis/redis.service';
 import { RateLimit } from 'src/common/decorators/rate-limit.decorator';
 import { RateLimitGuard } from 'src/common/guards/rate-limit.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly redis: RedisService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
   register(@Body() dto: RegisterDto) {

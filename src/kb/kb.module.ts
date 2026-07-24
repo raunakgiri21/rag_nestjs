@@ -8,9 +8,11 @@ import { PdfLoaderService } from './loaders/pdf-loader.service';
 import { PlainTextLoaderService } from './loaders/text-loader.service';
 import { TextSplitterService } from './splitters/text-splitter.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { KbService } from './kb.service';
 
 @Module({
   providers: [
+    KbService,
     IngestionService,
     RetrieverService,
     EmbeddingsService,
@@ -21,5 +23,6 @@ import { PrismaService } from 'src/prisma/prisma.service';
     PrismaService,
   ],
   controllers: [KbController],
+  exports: [KbService],
 })
 export class KbModule {}

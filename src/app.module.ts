@@ -12,6 +12,7 @@ import redisConfig from './config/redis.config';
 import { RedisModule } from './redis/redis.module';
 import { KbModule } from './kb/kb.module';
 import qdrantConfig from './config/qdrant.config';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import qdrantConfig from './config/qdrant.config';
     AuthModule,
     RedisModule,
     KbModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
