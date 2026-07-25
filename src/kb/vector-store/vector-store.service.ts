@@ -83,6 +83,7 @@ export class VectorStoreService implements OnModuleInit {
       document: Document;
       embedding: number[];
     }>,
+    documentId: string,
   ): Promise<void> {
     try {
       await this.client.upsert(
@@ -96,6 +97,7 @@ export class VectorStoreService implements OnModuleInit {
 
             payload: {
               text: document.pageContent,
+              documentId: documentId,
               ...document.metadata,
             },
           })),
@@ -134,6 +136,63 @@ export class VectorStoreService implements OnModuleInit {
       });
     } catch (error) {
       this.handleError('Failed to search vectors in Qdrant.', error);
+    }
+  }
+
+  async deleteChunksByDocumentId(
+    documentId: string,
+  ): Promise<{ deleted: boolean; message: string }> {
+    const collection = this.config.getOrThrow<string>('qdrant.collection');
+
+    try {
+      // Check if chunks exist
+      const existing = await this.client.scroll(collection, {
+        limit: 1,
+        with_payload: false,
+        with_vector: false,
+        filter: {
+          must: [
+            {
+              key: 'documentId',
+              match: {
+                value: documentId,
+              },
+            },
+          ],
+        },
+      });
+
+      if (existing.points.length === 0) {
+        return {
+          deleted: false,
+          message: `No chunks found for document ${documentId}.`,
+        };
+      }
+
+      // Delete chunks
+      await this.client.delete(collection, {
+        wait: true,
+        filter: {
+          must: [
+            {
+              key: 'documentId',
+              match: {
+                value: documentId,
+              },
+            },
+          ],
+        },
+      });
+
+      return {
+        deleted: true,
+        message: `Chunks deleted successfully for document ${documentId}.`,
+      };
+    } catch (error) {
+      this.handleError(
+        `Failed to delete chunks for document ${documentId} in Qdrant.`,
+        error,
+      );
     }
   }
 }

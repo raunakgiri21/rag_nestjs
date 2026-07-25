@@ -1,6 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   BadRequestException,
+  Body,
   Controller,
+  Delete,
+  Get,
   Post,
   UploadedFile,
   UseInterceptors,
@@ -9,10 +13,14 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 
 import { IngestionService } from './services/ingestion/ingestion.service';
+import { KbService } from './kb.service';
 
 @Controller('kb')
 export class KbController {
-  constructor(private readonly ingestionService: IngestionService) {}
+  constructor(
+    private readonly ingestionService: IngestionService,
+    private readonly kbService: KbService,
+  ) {}
 
   @Post('upload')
   @UseInterceptors(
@@ -36,5 +44,15 @@ export class KbController {
       mimeType: file.mimetype,
       originalName: file.originalname,
     });
+  }
+
+  @Get('documents')
+  async getAllDocuments(@Body('userId') userId: string) {
+    return await this.kbService.getAllDocumentsByUser(userId);
+  }
+
+  @Delete('documents')
+  async deleteDocument(@Body('documentId') documentId: string) {
+    return await this.kbService.deleteDocumentById(documentId);
   }
 }

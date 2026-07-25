@@ -75,8 +75,7 @@ export class IngestionService {
       const chunks = await this.textSplitter.split(documents);
 
       const embeddedChunks = await this.embeddingsService.embedChunks(chunks);
-
-      await this.vectorStore.upsert(embeddedChunks);
+      await this.vectorStore.upsert(embeddedChunks, documentId);
       await this.prisma.document.update({
         where: { id: documentId },
         data: { status: 'READY' } as dbDocType,
@@ -86,6 +85,7 @@ export class IngestionService {
         chunks: embeddedChunks.length,
       };
     } catch (error) {
+      console.log(error);
       if (documentId) {
         await this.prisma.document.update({
           where: { id: documentId },
