@@ -16,6 +16,7 @@ export class RefreshTokenDto extends createZodDto(RefreshTokenSchema) {}
 
 export const RegisterSchema = z.object({
   email: z.email(),
+  name: z.string(),
   password: z
     .string()
     .min(8)

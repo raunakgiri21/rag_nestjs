@@ -24,6 +24,15 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
+  private toUserResponse(user: UserType) {
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
+  }
+
   private getRefreshTokenExpiresAt(refreshToken: string): Date {
     const decoded = this.jwtService.decode<{ exp?: number }>(refreshToken);
 
@@ -109,7 +118,11 @@ export class AuthService {
 
       await this.saveRefreshToken(user.id, tokens.refreshToken);
 
-      return tokens;
+      return {
+        user: this.toUserResponse(user),
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      };
     } catch (error) {
       this.handleAuthError(error);
     }
@@ -132,6 +145,7 @@ export class AuthService {
       const user = await this.prisma.user.create({
         data: {
           email: dto.email,
+          name: dto.name,
           password,
           isActive: true, // remove this line if you want to implement email verification
         },
@@ -141,7 +155,11 @@ export class AuthService {
 
       await this.saveRefreshToken(user.id, tokens.refreshToken);
 
-      return tokens;
+      return {
+        user: this.toUserResponse(user),
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      };
     } catch (error) {
       this.handleAuthError(error);
     }
@@ -223,7 +241,11 @@ export class AuthService {
       const newTokens = await this.generateTokens(user);
 
       await this.saveRefreshToken(user.id, newTokens.refreshToken);
-      return newTokens;
+      return {
+        user: this.toUserResponse(user),
+        accessToken: newTokens.accessToken,
+        refreshToken: newTokens.refreshToken,
+      };
     } catch (error) {
       this.handleAuthError(error);
     }

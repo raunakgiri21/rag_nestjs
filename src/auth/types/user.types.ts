@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const UserSchema = z.object({
   id: z.uuid(),
+  name: z.string(),
   email: z.email(),
   role: z.enum(['USER', 'ADMIN']),
   isActive: z.boolean(),
