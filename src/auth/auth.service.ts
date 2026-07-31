@@ -251,6 +251,19 @@ export class AuthService {
     }
   }
 
+  async me(userId: string) {
+    try {
+      const user: UserType = await this.prisma.user.findUniqueOrThrow({
+        where: {
+          id: userId,
+        },
+      });
+      return this.toUserResponse(user);
+    } catch (error) {
+      this.handleAuthError(error);
+    }
+  }
+
   private async generateTokens(user: UserType) {
     const payload = {
       sub: user.id,
@@ -278,17 +291,18 @@ export class AuthService {
     const tokenHash = this.hashRefreshToken(refreshToken);
     const expiresAt = this.getRefreshTokenExpiresAt(refreshToken);
 
-    await this.prisma.refreshToken.deleteMany({
+    await this.prisma.refreshToken.upsert({
       where: {
-        userId: userId,
+        userId,
       },
-    });
-
-    await this.prisma.refreshToken.create({
-      data: {
-        tokenHash: tokenHash,
-        userId: userId,
-        expiresAt: expiresAt,
+      update: {
+        tokenHash,
+        expiresAt,
+      },
+      create: {
+        userId,
+        tokenHash,
+        expiresAt,
       },
     });
   }

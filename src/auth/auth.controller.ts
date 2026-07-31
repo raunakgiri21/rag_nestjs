@@ -7,9 +7,7 @@ import { Role } from 'generated/prisma/enums';
 import { Roles } from 'src/common/decorators/role.decorator';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import type { JwtPayloadType } from './types/jwt-payload.types';
-import { RateLimit } from 'src/common/decorators/rate-limit.decorator';
-import { RateLimitGuard } from 'src/common/guards/rate-limit.guard';
+import type { UserType } from './types/user.types';
 
 @Controller('auth')
 export class AuthController {
@@ -36,10 +34,9 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(JwtAuthGuard, RolesGuard, RateLimitGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.USER, Role.ADMIN)
-  @RateLimit({ limit: 5, window: 60 })
-  me(@CurrentUser() user: JwtPayloadType) {
-    return user;
+  me(@CurrentUser() user: UserType) {
+    return this.authService.me(user.id);
   }
 }
