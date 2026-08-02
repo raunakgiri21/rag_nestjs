@@ -1,5 +1,7 @@
 # RAG API
 
+Demo: [Youtube Video Link](https://youtu.be/Gm6GF84QLjA)
+
 Compact NestJS backend for the RAG project. The app entrypoint is intentionally small: [`src/app.controller.ts`](src/app.controller.ts) returns `Hello World!`, [`src/app.service.ts`](src/app.service.ts) owns that response, and [`src/main.ts`](src/main.ts) bootstraps the API with the `api` prefix, `ZodValidationPipe`, `ResponseInterceptor`, and `HttpExceptionFilter`.
 
 ## Phase 1 Auth Setup
