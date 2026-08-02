@@ -11,8 +11,8 @@ export class AgentService {
     private readonly llmService: LlmService,
   ) {}
 
-  async ask(question: string) {
-    const docs = await this.kbService.retrieve(question, 3);
+  async ask(question: string, userId: string) {
+    const docs = await this.kbService.retrieve(question, 3, userId);
     if (!docs.length) {
       return {
         answer: "I couldn't find any relevant information.",

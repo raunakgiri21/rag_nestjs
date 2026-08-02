@@ -84,6 +84,7 @@ export class VectorStoreService implements OnModuleInit {
       embedding: number[];
     }>,
     documentId: string,
+    userId: string,
   ): Promise<void> {
     try {
       await this.client.upsert(
@@ -98,42 +99,61 @@ export class VectorStoreService implements OnModuleInit {
             payload: {
               text: document.pageContent,
               documentId: documentId,
+              userId: userId,
               ...document.metadata,
             },
           })),
         },
       );
     } catch (error) {
-      console.log(error);
       this.handleError('Failed to upsert vectors into Qdrant.', error);
     }
   }
 
-  async search(embedding: number[], limit = 5): Promise<RetrievedDocument[]> {
+  async search(
+    embedding: number[],
+    limit = 5,
+    userId: string,
+  ): Promise<RetrievedDocument[]> {
     try {
       const results = await this.client.search(
         this.config.getOrThrow<string>('qdrant.collection'),
         {
           vector: embedding,
           limit,
+          filter: {
+            must: [
+              {
+                key: 'userId',
+                match: {
+                  value: userId,
+                },
+              },
+            ],
+          },
         },
       );
 
-      return results.map((point): RetrievedDocument => {
-        const payload = point.payload as {
-          text: string;
-          source: string;
-          page: number;
-        };
+      return results
+        .filter((point) => (point.score ?? 0) >= 0.5)
+        .map((point): RetrievedDocument => {
+          const payload = point.payload as {
+            text: string;
+            source: string;
+            page: number;
+            loc: {
+              pageNumber: number;
+            };
+          };
 
-        return {
-          content: payload.text,
-          source: payload.source,
-          page: payload.page,
-          score: point.score,
-          chunkId: point.id as string,
-        };
-      });
+          return {
+            content: payload.text,
+            source: payload.source,
+            page: payload.loc?.pageNumber,
+            score: point.score,
+            chunkId: point.id as string,
+          };
+        });
     } catch (error) {
       this.handleError('Failed to search vectors in Qdrant.', error);
     }

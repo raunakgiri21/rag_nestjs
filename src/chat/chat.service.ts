@@ -6,7 +6,7 @@ import { AskDto } from './chat.dto';
 export class ChatService {
   constructor(private readonly agentService: AgentService) {}
 
-  async ask(dto: AskDto) {
-    return this.agentService.ask(dto.question);
+  async ask(dto: AskDto, userId: string) {
+    return this.agentService.ask(dto.question, userId);
   }
 }

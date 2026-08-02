@@ -14,12 +14,12 @@ export class KbService {
     private readonly vectorStore: VectorStoreService,
   ) {}
 
-  retrieve(query: string, limit: number = 5) {
-    return this.retriever.retrieve(query, limit);
+  retrieve(query: string, limit: number = 5, userId: string) {
+    return this.retriever.retrieve(query, limit, userId);
   }
 
-  ingest(file: IngestFile) {
-    return this.ingestion.ingest(file);
+  ingest(file: IngestFile, userId: string) {
+    return this.ingestion.ingest(file, userId);
   }
 
   getAllDocumentsByUser(userId: string) {

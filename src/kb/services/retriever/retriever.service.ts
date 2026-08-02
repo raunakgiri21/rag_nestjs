@@ -10,9 +10,13 @@ export class RetrieverService {
     private readonly vectorStore: VectorStoreService,
   ) {}
 
-  async retrieve(query: string, limit = 5): Promise<RetrievedDocument[]> {
+  async retrieve(
+    query: string,
+    limit = 3,
+    userId: string,
+  ): Promise<RetrievedDocument[]> {
     const embedding = await this.embeddingsService.embedQuery(query);
 
-    return await this.vectorStore.search(embedding, limit);
+    return await this.vectorStore.search(embedding, limit, userId);
   }
 }

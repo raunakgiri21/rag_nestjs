@@ -23,7 +23,7 @@ export class IngestionService {
 
   async ingest(
     file: IngestFile,
-    userId: string = 'test-user',
+    userId: string,
   ): Promise<{ message: string; chunks: number }> {
     let documentId: string = '';
     try {
@@ -75,7 +75,7 @@ export class IngestionService {
       const chunks = await this.textSplitter.split(documents);
 
       const embeddedChunks = await this.embeddingsService.embedChunks(chunks);
-      await this.vectorStore.upsert(embeddedChunks, documentId);
+      await this.vectorStore.upsert(embeddedChunks, documentId, userId);
       await this.prisma.document.update({
         where: { id: documentId },
         data: { status: 'READY' } as dbDocType,
