@@ -9,6 +9,7 @@ import { PlainTextLoaderService } from './loaders/text-loader.service';
 import { TextSplitterService } from './splitters/text-splitter.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { KbService } from './kb.service';
+import { FileStorageService } from 'src/storage/file-storage.service';
 
 @Module({
   providers: [
@@ -21,6 +22,7 @@ import { KbService } from './kb.service';
     PlainTextLoaderService,
     TextSplitterService,
     PrismaService,
+    FileStorageService,
   ],
   controllers: [KbController],
   exports: [KbService],

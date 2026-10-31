@@ -1,9 +1,13 @@
-import { Injectable } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { IngestionService } from './services/ingestion/ingestion.service';
 import { RetrieverService } from './services/retriever/retriever.service';
 import { IngestFile } from './types/ingest-file.type';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { VectorStoreService } from './vector-store/vector-store.service';
+import { FileStorageService } from 'src/storage/file-storage.service';
 
 @Injectable()
 export class KbService {
@@ -12,6 +16,7 @@ export class KbService {
     private readonly ingestion: IngestionService,
     private readonly prismaService: PrismaService,
     private readonly vectorStore: VectorStoreService,
+    private readonly fileStorage: FileStorageService,
   ) {}
 
   retrieve(query: string, limit: number = 5, userId: string) {
@@ -28,27 +33,64 @@ export class KbService {
     });
   }
 
-  async deleteDocumentById(documentId: string) {
-    try {
-      const res = await this.vectorStore.deleteChunksByDocumentId(documentId);
-      if (res.deleted) {
-        const docExists = await this.prismaService.document.findUnique({
-          where: { id: documentId },
-        });
-        if (!docExists) {
-          throw new Error(`Document with ID ${documentId} does not exist.`);
-        }
-        await this.prismaService.document.delete({
-          where: { id: documentId },
-        });
-      }
-      return {
-        deleted: res.deleted,
-        message: res.message,
-      };
-    } catch (error) {
-      console.log(error);
-      throw new Error(`Failed to delete document with ID ${documentId}`);
+  // Retrieve original PDF for preview.
+  async getDocumentPreview(documentId: string, userId: string) {
+    const document = await this.prismaService.document.findFirst({
+      where: {
+        id: documentId,
+        userId,
+        status: 'READY',
+      },
+    });
+
+    if (!document || !document.storageKey) {
+      throw new NotFoundException('Document not found.');
     }
+
+    const file = await this.fileStorage.get(document.storageKey);
+
+    if (!file.Body) {
+      throw new NotFoundException('PDF file not found in storage.');
+    }
+
+    const bytes = await file.Body.transformToByteArray();
+    const buffer = Buffer.from(bytes);
+
+    return {
+      body: buffer,
+      fileName: document.fileName,
+    };
+  }
+
+  // Delete document, its vectors, and its original file.
+  async deleteDocumentById(documentId: string, userId: string) {
+    const document = await this.prismaService.document.findFirst({
+      where: {
+        id: documentId,
+        userId,
+      },
+    });
+
+    if (!document) {
+      throw new NotFoundException('Document not found.');
+    }
+
+    // Delete vectors from Qdrant.
+    await this.vectorStore.deleteChunksByDocumentId(documentId);
+
+    // Delete original PDF from SeaweedFS, if it exists.
+    if (document.storageKey) {
+      await this.fileStorage.delete(document.storageKey);
+    }
+
+    // Delete database record.
+    await this.prismaService.document.delete({
+      where: { id: documentId },
+    });
+
+    return {
+      deleted: true,
+      message: 'Document deleted successfully.',
+    };
   }
 }

@@ -13,6 +13,7 @@ import { RedisModule } from './redis/redis.module';
 import { KbModule } from './kb/kb.module';
 import qdrantConfig from './config/qdrant.config';
 import { ChatModule } from './chat/chat.module';
+import storageConfig from './config/storage.config';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ChatModule } from './chat/chat.module';
         redisConfig,
         aiConfig,
         qdrantConfig,
+        storageConfig,
       ],
     }),
     PrismaModule,

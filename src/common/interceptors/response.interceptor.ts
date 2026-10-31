@@ -5,6 +5,7 @@ import {
   ExecutionContext,
   Injectable,
   NestInterceptor,
+  StreamableFile,
 } from '@nestjs/common';
 import { map, Observable } from 'rxjs';
 
@@ -14,12 +15,19 @@ export class ResponseInterceptor implements NestInterceptor {
     const res = context.switchToHttp().getResponse();
 
     return next.handle().pipe(
-      map((data) => ({
-        success: true,
-        statusCode: res.statusCode,
-        message: data?.message ?? 'Success',
-        data: data?.data ?? data,
-      })),
+      map((data) => {
+        // Don't wrap file responses in JSON
+        if (data instanceof StreamableFile) {
+          return data;
+        }
+
+        return {
+          success: true,
+          statusCode: res.statusCode,
+          message: data?.message ?? 'Success',
+          data: data?.data ?? data,
+        };
+      }),
     );
   }
 }

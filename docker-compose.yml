@@ -31,7 +31,21 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
 
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest
+    container_name: rag-storage
+    restart: unless-stopped
+    command: server -s3 -s3.config=/etc/seaweedfs/s3.json
+    ports:
+      - '8333:8333' # S3 API
+      - '9333:9333' # Master UI/API
+      - '8080:8080' # Volume server
+    volumes:
+      - seaweedfs_data:/data
+      - ./seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+
 volumes:
   postgres_data:
   redis_data:
   qdrant_data:
+  seaweedfs_data:

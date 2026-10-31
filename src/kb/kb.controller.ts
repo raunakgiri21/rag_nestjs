@@ -4,7 +4,9 @@ import {
   Controller,
   Delete,
   Get,
+  Param,
   Post,
+  StreamableFile,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -63,7 +65,28 @@ export class KbController {
   }
 
   @Delete('documents')
-  async deleteDocument(@Body('documentId') documentId: string) {
-    return await this.kbService.deleteDocumentById(documentId);
+  @UseGuards(JwtAuthGuard)
+  async deleteDocument(
+    @Body('documentId') documentId: string,
+    @CurrentUser() user: UserType,
+  ) {
+    return this.kbService.deleteDocumentById(documentId, user.id);
+  }
+
+  @Get('documents/:id/preview')
+  @UseGuards(JwtAuthGuard)
+  async previewDocument(
+    @Param('id') documentId: string,
+    @CurrentUser() user: UserType,
+  ): Promise<StreamableFile> {
+    const { body, fileName } = await this.kbService.getDocumentPreview(
+      documentId,
+      user.id,
+    );
+
+    return new StreamableFile(body, {
+      type: 'application/pdf',
+      disposition: `inline; filename="${fileName.replace(/["\\\r\n]/g, '_')}"`,
+    });
   }
 }

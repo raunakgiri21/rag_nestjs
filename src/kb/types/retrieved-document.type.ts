@@ -4,4 +4,5 @@ export interface RetrievedDocument {
   page: number;
   score: number;
   chunkId?: string;
+  documentId?: string;
 }

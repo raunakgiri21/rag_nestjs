@@ -50,6 +50,7 @@ ${doc.content}
         page: doc.page,
         score: doc.score,
         chunkId: doc.chunkId,
+        documentId: doc.documentId,
       })),
     };
   }

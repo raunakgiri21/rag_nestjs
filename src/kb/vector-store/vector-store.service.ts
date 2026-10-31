@@ -28,18 +28,18 @@ export class VectorStoreService implements OnModuleInit {
   }
 
   // only for testing purposes, will delete the collection on module destroy
-  async onModuleDestroy(): Promise<void> {
-    try {
-      await this.client.deleteCollection(
-        this.config.getOrThrow<string>('qdrant.collection'),
-      );
+  // async onModuleDestroy(): Promise<void> {
+  //   try {
+  //     await this.client.deleteCollection(
+  //       this.config.getOrThrow<string>('qdrant.collection'),
+  //     );
 
-      this.logger.log('Qdrant collection deleted.');
-    } catch (error) {
-      console.log(error);
-      this.logger.warn('Failed to delete Qdrant collection.');
-    }
-  }
+  //     this.logger.log('Qdrant collection deleted.');
+  //   } catch (error) {
+  //     console.log(error);
+  //     this.logger.warn('Failed to delete Qdrant collection.');
+  //   }
+  // }
 
   private handleError(message: string, error: unknown): never {
     this.logger.error(message, error instanceof Error ? error.stack : error);
@@ -141,6 +141,7 @@ export class VectorStoreService implements OnModuleInit {
             text: string;
             source: string;
             page: number;
+            documentId: string;
             loc: {
               pageNumber: number;
             };
@@ -149,6 +150,7 @@ export class VectorStoreService implements OnModuleInit {
           return {
             content: payload.text,
             source: payload.source,
+            documentId: payload.documentId,
             page: payload.loc?.pageNumber,
             score: point.score,
             chunkId: point.id as string,

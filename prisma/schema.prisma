@@ -40,7 +40,7 @@ model Document {
   id        String @id @default(uuid())
   userId    String
   fileName  String
-
+  storageKey String? @unique
   status    DocumentStatus
 
   createdAt DateTime @default(now())
