@@ -2,6 +2,7 @@ import { registerAs } from '@nestjs/config';
 
 export default registerAs('ai', () => ({
   defaultProvider: 'gemini',
+  requestTimeoutMs: Number(process.env.AI_REQUEST_TIMEOUT_MS ?? 30000),
 
   gemini: {
     apiKey: process.env.GEMINI_API_KEY!,

@@ -15,6 +15,9 @@ If the answer cannot be found in the context, say exactly:
 Do not hallucinate. Give confidence scores for your answer in the decimal range of 0 to 0.5, where 0 means no confidence and 1 means full confidence.
 
 Return your answer in the required JSON format.
+
+Also return exactly 3 short follow-up questions that are relevant to both the
+user's question and your answer. Keep each suggested question concise.
 `,
   ],
 

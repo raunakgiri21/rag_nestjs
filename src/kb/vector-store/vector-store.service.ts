@@ -6,7 +6,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { QdrantClient } from '@qdrant/js-client-rest';
+import { QdrantClient, Schemas } from '@qdrant/js-client-rest';
 import { v4 as uuid } from 'uuid';
 import { Document } from '@langchain/core/documents';
 import { RetrievedDocument } from '../types/retrieved-document.type';
@@ -114,23 +114,38 @@ export class VectorStoreService implements OnModuleInit {
     embedding: number[],
     limit = 5,
     userId: string,
+    documentIds?: string[],
   ): Promise<RetrievedDocument[]> {
     try {
+      const filter: Schemas['Filter'] = {
+        must: [
+          {
+            key: 'userId',
+            match: {
+              value: userId,
+            },
+          },
+
+          // Search only selected documents when provided
+          ...(documentIds?.length
+            ? [
+                {
+                  key: 'documentId',
+                  match: {
+                    any: documentIds,
+                  },
+                },
+              ]
+            : []),
+        ],
+      };
+
       const results = await this.client.search(
         this.config.getOrThrow<string>('qdrant.collection'),
         {
           vector: embedding,
           limit,
-          filter: {
-            must: [
-              {
-                key: 'userId',
-                match: {
-                  value: userId,
-                },
-              },
-            ],
-          },
+          filter,
         },
       );
 
@@ -140,7 +155,6 @@ export class VectorStoreService implements OnModuleInit {
           const payload = point.payload as {
             text: string;
             source: string;
-            page: number;
             documentId: string;
             loc: {
               pageNumber: number;

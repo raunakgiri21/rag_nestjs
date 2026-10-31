@@ -85,7 +85,8 @@ Phase 2 adds the retrieval-augmented generation pipeline around the auth foundat
 - [`src/agent/prompts/rag.prompt.ts`](src/agent/prompts/rag.prompt.ts) constrains the model to answer only from the provided context.
 - [`src/agent/schemas/answer.schema.ts`](src/agent/schemas/answer.schema.ts) defines the structured response shape.
 - [`src/agent/llm/llm.service.ts`](src/agent/llm/llm.service.ts) supports the configured provider and currently switches between Gemini and Groq.
-- [`src/agent/agent.service.ts`](src/agent/agent.service.ts) assembles the retrieved context, invokes the model, and appends source references to the final answer.
+- [`src/agent/agent.service.ts`](src/agent/agent.service.ts) assembles the retrieved context, invokes the model, and appends three suggested follow-up questions and source references to the final answer; zero-confidence fallback responses omit suggestions.
+- LLM requests time out after `AI_REQUEST_TIMEOUT_MS` milliseconds (default `30000`) and return a temporary-unavailability response with zero confidence and no suggestions.
 
 ### Module Wiring
 

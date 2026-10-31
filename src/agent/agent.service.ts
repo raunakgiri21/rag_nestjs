@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { KbService } from '../kb/kb.service';
 import { LlmService } from './llm/llm.service';
 import { ragPrompt } from './prompts/rag.prompt';
@@ -6,9 +7,12 @@ import { AnswerSchema } from './schemas/answer.schema';
 
 @Injectable()
 export class AgentService {
+  private readonly logger = new Logger(AgentService.name);
+
   constructor(
     private readonly kbService: KbService,
     private readonly llmService: LlmService,
+    private readonly config: ConfigService,
   ) {}
 
   async ask(question: string, userId: string) {
@@ -17,6 +21,7 @@ export class AgentService {
       return {
         answer: "I couldn't find any relevant information.",
         confidence: 0,
+        suggestions: [],
         sources: [],
       };
     }
@@ -41,7 +46,39 @@ ${doc.content}
       .getModel()
       .withStructuredOutput(AnswerSchema);
 
-    const response = await structuredModel.invoke(prompt);
+    let response: Awaited<ReturnType<typeof structuredModel.invoke>>;
+    try {
+      const timeoutMs = this.config.getOrThrow<number>('ai.requestTimeoutMs');
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+
+      try {
+        response = await Promise.race([
+          structuredModel.invoke(prompt),
+          new Promise<never>((_, reject) => {
+            timeout = setTimeout(
+              () =>
+                reject(new Error(`LLM request timed out after ${timeoutMs}ms`)),
+              timeoutMs,
+            );
+          }),
+        ]);
+      } finally {
+        if (timeout) {
+          clearTimeout(timeout);
+        }
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`LLM request failed: ${message}`);
+
+      return {
+        answer:
+          'The AI service is temporarily unavailable. Please try again later.',
+        confidence: 0,
+        suggestions: [],
+        sources: [],
+      };
+    }
 
     return {
       ...response,
